@@ -1,21 +1,51 @@
 # RAGE Weapon Audio Web
 
-Mobile-first browser utility for reading GTA V / FiveM `ADAT` `.awc` weapon audio banks and exporting individual streams as standard WAV files.
+Mobile-first browser utility for reading GTA V / FiveM `ADAT` `.awc` weapon audio banks and converting them into game-ready WAV packs.
+
+## Batch workflow
+
+1. Open one or many `.awc` files, or choose a folder.
+2. The tool parses all supported banks locally in the browser.
+3. Preview any individual stream.
+4. Select the banks you want to export.
+5. Tap **Download Game-Ready ZIP**.
+6. The generated ZIP contains organized WAV folders plus an `audio-manifest.json` ready to plug into a game asset pipeline.
+
+## Output layout
+
+```text
+Project-Strike-Audio/
+├── audio/
+│   ├── lmg_combat/
+│   │   ├── lmg_combat_stream_001_0x........wav
+│   │   └── ...
+│   ├── ptl_pistol/
+│   └── ...
+├── manifest/
+│   └── audio-manifest.json
+└── IMPORT-INTO-GAME.txt
+```
+
+The generated manifest records the bank name, stream hash/id, output WAV path, source codec, sample rate, sample count and duration for every converted stream.
 
 ## Current features
 
 - Works entirely in the browser; selected audio is not uploaded.
-- iPhone/Safari-friendly file picker.
-- Open one or many `.awc` files.
-- Open a folder and scan its `.awc` files.
+- iPhone/Safari-friendly interface.
+- Multi-file AWC import.
+- Folder import where supported by the browser.
+- Drag-and-drop on desktop.
 - Parses ADAT stream tables and FORMAT/DATA chunks.
 - Supports PCM16 (`codec 0`) weapon streams.
 - Supports IMA ADPCM (`codec 4`) streams.
 - Individual stream preview with Web Audio.
-- Waveform preview.
 - Export individual streams as WAV.
-- Export all streams in a bank as WAV downloads.
-- Displays stream hash/id, sample rate, duration, codec, sample count, and size.
+- Export one bank as a ZIP.
+- Select multiple/all banks and export every stream in one ZIP.
+- Automatic game-ready folder organization.
+- Automatic `audio-manifest.json` generation.
+- Conversion/ZIP progress display.
+- Displays stream hash/id, sample rate, duration, codec and size.
 
 ## Verified sample
 
@@ -30,25 +60,14 @@ Publish the repository from the `main` branch root:
 3. Select `main` and `/ (root)`.
 4. Save.
 
-The expected Pages URL is:
+Expected Pages URL:
 
 `https://matthewcodergamer.github.io/RAGE-Weapon-Audio-Web/`
 
 ## iPhone usage
 
-1. Open the Pages site in Safari.
-2. Tap **Choose AWC Files**.
-3. Pick a file such as `lmg_combat.awc`, `ptl_pistol.awc`, or `sht_bullpup.awc` from Files.
-4. The bank should appear with its individual streams.
-5. Tap **▶** to preview a stream.
-6. Tap **WAV** to export that stream as a standard PCM WAV file.
-
-For many banks, use **Choose Folder** and select the extracted folder containing your `.awc` files.
-
-## Format references
-
-The implementation follows publicly documented/researched GTA V AWC/ADAT structures, including work in CodeWalker and related community implementations. The IMA ADPCM decoder uses the standard IMA ADPCM algorithm.
+Use **Choose AWC Files** to select multiple banks from the Files app. After loading, keep the banks you want checked and tap **Download Game-Ready ZIP**. For large collections, exporting in several groups can reduce Safari memory pressure.
 
 ## Asset notice
 
-This repository contains no Rockstar Games, Call of Duty, GTA V mod-pack, or other third-party audio assets. The utility processes files selected by the user locally. Users are responsible for having permission to use/export/distribute the source audio they select.
+This repository contains no Rockstar Games, Call of Duty, GTA V mod-pack, or other third-party audio assets. The utility processes files selected by the user locally. Users are responsible for having permission to use, export or redistribute the source audio they select.
