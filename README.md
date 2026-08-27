@@ -1,75 +1,62 @@
 # RAGE Weapon Audio Web
 
-Mobile-first browser utility for extracting GTA V / FiveM `ADAT` `.awc` weapon-audio banks into a flat, game-ready WAV ZIP.
+Mobile-first browser utility for extracting GTA V / FiveM `.awc` weapon-audio banks into a flat, game-ready WAV ZIP.
 
-## What changed
+## Decoder v5
 
-The decoder now follows the established CodeWalker AWC layout instead of guessing ADPCM blocks.
+The converter now treats **every AWC stream as an independent audio asset**. A 16-stream bank is parsed, validated, previewed and exported as 16 separate streams — never as one grouped fake conversion.
 
-- AWC header and chunk tables are validated before export.
-- PCM (`codec 0`) is decoded directly.
-- Rockstar IMA ADPCM (`codec 4`) uses fixed 2048-byte blocks.
-- ADPCM block header is read as CodeWalker does: step index at byte 0, predictor at bytes 2-3, followed by 2044 bytes of nibbles.
-- Unsupported, multi-channel, or encrypted layouts are rejected instead of being exported as noise.
-- Each bank has a **Preview** button so you can hear the first decoded stream before exporting everything.
+The current decoder follows the CodeWalker AWC layout:
 
-Reference implementation: `dexyfex/CodeWalker`, `AwcFile.cs` / `ADPCMCodec.DecodeADPCM`.
+- `ADAT` / `TADA` container parsing.
+- `0xFA` format chunks and `0x55` data chunks.
+- PCM16 (`codec 0`).
+- Rockstar IMA ADPCM (`codec 4`).
+- ADPCM uses 2048-byte blocks.
+- Each ADPCM block reads the initial **16-bit predictor from bytes 0–1**, the **step index from byte 2**, emits the predictor sample, and then decodes up to 2044 bytes of nibbles.
+- Unsupported, encrypted and multi-channel layouts are rejected instead of exported as noise.
 
-## Workflow
+Reference: `dexyfex/CodeWalker`, `AwcFile.cs` / `ADPCMCodec`.
 
-1. Tap **Choose Folder** and select a folder containing `.awc` files.
-2. Or use **Choose AWC Files** to select many files manually on iPhone.
-3. The app validates each bank and lists its stream count + codec.
-4. Tap **Preview** on a bank to verify decoding.
-5. Tap **Export All WAVs as ZIP** once.
-6. Download `Project-Strike-Audio.zip`.
+## Per-stream verification
 
-## Flat ZIP layout
+Each stream tracks:
+
+- source bank and stream ID
+- codec
+- sample rate
+- declared sample count
+- decoded sample count
+- duration
+- raw-data hash
+- decoded-audio hash
+- peak level
+- RMS level
+- DC offset
+- clipping ratio
+- exact-duplicate relationship
+
+Very short valid sounds are labeled **short component**. Weapon banks often contain trigger, bolt, casing, impact, mechanical, transient, tail or other tiny components in addition to complete gunshots, so a short click/punch is not automatically a decode failure.
+
+## Fast large-folder workflow
+
+Folder import only parses metadata and hashes raw stream chunks. It does **not** decode all 100+ clips immediately, which keeps iPhone/Safari responsive.
+
+Actual PCM decoding happens independently when a stream is previewed or when **Export All Verified WAVs as ZIP** is pressed. The export loop yields back to the browser regularly so the interface stays responsive.
+
+## Output
 
 ```text
 Project-Strike-Audio/
 ├── audio/
-│   ├── lmg_combat__001__0x........wav
-│   ├── lmg_combat__002__0x........wav
-│   ├── ptl_pistol__001__0x........wav
-│   ├── sht_pump__001__0x........wav
-│   └── ... every WAV in this one folder
-├── audio-manifest.json
-└── README.txt
+│   ├── weapons_player__ptl_pistol__001__0x........wav
+│   ├── weapons_player__ptl_pistol__002__0x........wav
+│   ├── dlc_weapons__db_shotgun__001__0x........wav
+│   └── ... all verified WAVs in this one folder
+└── audio-manifest.json
 ```
 
-There is **no folder per bank and no folder per sound**. Bank names are built into filenames to prevent collisions, so `audio/` can be dragged directly into the game project's audio location.
-
-`audio-manifest.json` preserves the original bank, stream ID/hash, source filename, WAV path, codec, sample rate, sample count, and duration.
-
-## Current support
-
-- Batch folder import.
-- Multi-file AWC import.
-- Little-endian `ADAT` and big-endian `TADA` header recognition.
-- Single-channel weapon banks.
-- PCM16 (`codec 0`).
-- Rockstar IMA ADPCM (`codec 4`).
-- CodeWalker-compatible 2048-byte ADPCM block decoding.
-- Preview before export.
-- One-click batch conversion.
-- One flat WAV folder inside one ZIP.
-- Game manifest generation.
-- Local-only browser processing.
-
-The parser was verified against `lmg_combat.awc`, which exposes four mono PCM streams at 48 kHz.
-
-## Intentionally rejected
-
-The tool refuses layouts it cannot decode reliably rather than creating fake/random audio:
-
-- single-channel encrypted banks
-- multi-channel banks
-- multi-channel encrypted banks
-- unknown codecs
-- corrupted chunk tables
-
-Those formats need a dedicated implementation before they are allowed through the export path.
+There is no folder per bank or per sound. Layer + bank + stream information is embedded into filenames to prevent silent ZIP overwrites.
 
 ## GitHub Pages
 
